@@ -1585,6 +1585,16 @@ SDL_CreateWindow(const char *title, int x, int y, int w, int h, Uint32 flags)
 #endif
     }
 
+    /* Unless the user has specified the high-DPI disabling hint, respect the
+     * SDL_WINDOW_ALLOW_HIGHDPI flag.
+     */
+    if (flags & SDL_WINDOW_ALLOW_HIGHDPI) {
+        if (SDL_GetHintBoolean(SDL_HINT_VIDEO_HIGHDPI_DISABLED, SDL_FALSE)) {
+            flags &= ~SDL_WINDOW_ALLOW_HIGHDPI;
+        }
+    }
+    _this->allow_hidpi = !!(flags & SDL_WINDOW_ALLOW_HIGHDPI);
+
     if (flags & SDL_WINDOW_OPENGL) {
         if (!_this->GL_CreateContext) {
             SDL_SetError("OpenGL support is either not configured in SDL "
@@ -1629,15 +1639,6 @@ SDL_CreateWindow(const char *title, int x, int y, int w, int h, Uint32 flags)
             SDL_SetError("Metal and Vulkan not supported on same window. "
                          "To use MoltenVK, set SDL_WINDOW_VULKAN only.");
             return NULL;
-        }
-    }
-
-    /* Unless the user has specified the high-DPI disabling hint, respect the
-     * SDL_WINDOW_ALLOW_HIGHDPI flag.
-     */
-    if (flags & SDL_WINDOW_ALLOW_HIGHDPI) {
-        if (SDL_GetHintBoolean(SDL_HINT_VIDEO_HIGHDPI_DISABLED, SDL_FALSE)) {
-            flags &= ~SDL_WINDOW_ALLOW_HIGHDPI;
         }
     }
 

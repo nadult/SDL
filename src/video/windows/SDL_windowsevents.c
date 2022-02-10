@@ -80,6 +80,9 @@
 #ifndef WM_UNICHAR
 #define WM_UNICHAR 0x0109
 #endif
+#ifndef WM_DPICHANGED
+#define WM_DPICHANGED 0x02E0
+#endif
 
 #ifndef IS_HIGH_SURROGATE
 #define IS_HIGH_SURROGATE(x)   (((x) >= 0xd800) && ((x) <= 0xdbff))
@@ -623,6 +626,16 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     SDL_WindowData *data;
     LRESULT returnCode = -1;
 
+    if (msg == WM_NCCREATE) {
+        SDL_VideoDevice *_this = SDL_GetVideoDevice();
+        HINSTANCE userDLL = LoadLibraryA("USER32.DLL");
+        if(userDLL && _this && _this->allow_hidpi) {
+            BOOL (WINAPI* EnableNonClientDpiScaling)(HWND) = NULL;
+            EnableNonClientDpiScaling = (BOOL (WINAPI*)(HWND)) GetProcAddress(userDLL, "EnableNonClientDpiScaling");
+            EnableNonClientDpiScaling(hwnd);
+        }
+    }
+
     /* Send a SDL_SYSWMEVENT if the application wants them */
     if (SDL_GetEventState(SDL_SYSWMEVENT) == SDL_ENABLE) {
         SDL_SysWMmsg wmmsg;
@@ -683,6 +696,14 @@ WIN_WindowProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
                the global foreground window changes to and from this window. */
             WIN_UpdateFocus(data->window);
             WIN_CheckICMProfileChanged(data->window);
+        }
+        break;
+
+    case WM_DPICHANGED:
+        if(data->window->flags & SDL_WINDOW_ALLOW_HIGHDPI) {
+            RECT* const rect = (RECT*)lParam;
+            SetWindowPos(hwnd, NULL, rect ->left, rect ->top, rect->right - rect->left,
+                         rect->bottom - rect->top, SWP_NOZORDER | SWP_NOACTIVATE);
         }
         break;
 

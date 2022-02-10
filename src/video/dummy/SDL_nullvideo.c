@@ -89,6 +89,7 @@ DUMMY_CreateDevice(int devindex)
         return (0);
     }
     device->is_dummy = SDL_TRUE;
+    device->allow_hidpi = SDL_FALSE;
 
     /* Set the function pointers */
     device->VideoInit = DUMMY_VideoInit;
